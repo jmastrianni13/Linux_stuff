@@ -1,0 +1,127 @@
+Steps to create a bootable Kali distribution on USB with Persistence using mac OS X
+
+What you'll need
+  - Mac running OS X (Catalina)
+  - A portable flash drive (I used a SanDisk 32GB 2.0 USB Drive)
+  - A Kali (live) iso (download here: https://www.kali.org/downloads/)
+  - The SHA256Sum of your Kali iso (copy this when you download the iso)
+  
+
+Before proceeding forward, confirm the SHA256Sum of your downloaded file matches the one on https://www.kali.org/downloads/
+For more information, see https://www.kali.org/docs/introduction/download-official-kali-linux-images/
+  
+*From Mac OS*
+
+1. Boot up mac
+
+NEXT STEP IS CRITICAL
+2. Identify the location of your USB
+   a. Open terminal and type  
+           diskutil list
+      to list the internal drives on your system - DO NOT EDIT THESE
+
+   b. plug in the USB and retype
+           diskutil list
+      compare the output to that from step 2.a and identify the location of the new drive.  
+      it will be something like
+          /dev/diskX
+      Note this location
+
+3. Use the Disk Utility application (in /Application/Utilities) to erase the USB
+   a. open Disk Utility and select the portable USB drive (left side of the app's window)
+   b. Select erase
+   c. From the menu, change format to MS-DOS (FAT)
+      leave the remaining options as is
+
+4. Unmount the USB. Go back to terminal and type
+       diskutil unmountDisk /dev/diskX
+
+5. Use dd to push the .iso to the USB.  In terminal type
+       sudo dd if=location_and_name_of_iso of=/dev/rdiskX bs=4m
+  This step will take some time to complete
+
+Restart your machine and once you hear the chime press and hold the option key.
+A screen will appear where you can select Macintosh HD, EFI Boot and possibly other options depending on your setup.
+To boot Kali, select EFI boot.
+
+The USB now contains the image and you can use it run live instances of Kali.
+
+To add persistence, continue to the next set of instructions.
+
+If you haven't already, restart your machine and boot a live instance of Kali (select Live)
+
+*FROM KALI*
+
+1. Open terminal and check your PATH variable (echo $PATH).  If PATH DOES include /sbin, then remove that from the terminal commands in the remaining instructions
+
+2. identify the USB drive.  Open terminal and type in
+    sudo /sbin/fdisk -l
+    
+   it will be something like /dev/sdX
+   MAKE SURE THIS IS THE LOCATION OF THE USB DRIVE
+
+3. Create a new partition for persistence.  In terminal, type
+    sudo /sbin/cfdisk /dev/sdX
+    
+    a partition table will open
+    
+4. Create the new partition
+   a. From the partition table, select
+         Free space
+      in the Device column
+   b. Press enter to use all available space (or edit the amount of space you want to use)
+   c. You'll see an option at the bottom of the partition table of [primary] and [extended]
+      select [primary] and press enter
+   d. Looking at the options at the bottom of the partition table, select [ Write ], and press enter
+   e. You'll be asked "Are you sure you want to write the partition table to disk?"
+      type
+          yes
+      and press enter
+   f. Looking at the options at the bottom of the partition table, select [ Quit ], and press enter.  You will be brought back to the terminal
+   
+5. Examine the disk again to see the new partition.  In terminal, type
+    sudo /sbin/fdisk -l
+    
+   Note the location of the new partition, it will be something like
+       /dev/sdX
+
+6. Create persistence.  From terminal, type
+    sudo mkfs.ext4 -L persistence /dev/sdX
+    
+   Close all terminal windows
+
+7. Create the persistence configuration file.  
+   a. From desktop, open file manager and select persistence
+   b. Open a terminal from here (path is /media/kali/persistence/) and create a persistence.conf file. 
+          sudo touch persistence.conf
+          
+   c. open file (you can use a command like sudo nano persistence.conf ) and add the following text
+          / union
+      save and close the file
+      
+   d. From the terminal, use cat to show the file contents.  Type
+          cat persistence.conf
+
+8. close all windows and restart the machine
+
+9. Restart your machine and once you hear the chime press and hold the option key.
+   A screen will appear where you can select Macintosh HD, EFI Boot and possibly other options depending on your setup.
+   Select EFI boot.
+
+10. Select Live USB with Persistence
+
+
+You now have a Kali bootable USB with persistence.  
+To test the persistence, make some changes (like the desktop background picture) and create a text file with some content.
+Once you're done, reboot the machine following steps 9 and 10 above.  Your selected desktop picture and any files you created will be intact.
+
+Enjoy!
+
+Additional resources
+
+Official source for Kali images: https://www.kali.org/downloads/
+Information on checking SHA256: https://www.kali.org/docs/introduction/download-official-kali-linux-images/
+Information on dd: https://www.cyberciti.biz/faq/how-to-create-disk-image-on-mac-os-x-with-dd-command/ 
+Information on linux cfdisk and partition table: https://www.geeksforgeeks.org/cfdisk-command-in-linux-with-examples/
+Instructional video for creating Kali with persistence from Ubuntu: https://www.youtube.com/watch?v=d6bgukuQ0ao
+
